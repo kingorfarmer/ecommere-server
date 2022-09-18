@@ -1,4 +1,5 @@
 const Tour = require('./../models/tourModel');
+const catchAsync = require('./../utils/catchAsync')
 
 const apiFeatures = async (queryValue) => {
   const queryObj = { ...queryValue };
@@ -62,8 +63,8 @@ exports.topFiveCheap = (req, res, next) => {
   next();
 };
 
-exports.getAllTours = async (req, res) => {
-  try {
+exports.getAllTours = catchAsync(
+  async (req, res, next) => {
     const query = apiFeatures(req.query);
     const tours = await query;
 
@@ -74,13 +75,8 @@ exports.getAllTours = async (req, res) => {
         tours,
       },
     });
-  } catch (error) {
-    res.status(404).json({
-      status: 'error',
-      message: error,
-    });
   }
-};
+)
 exports.createTour = async (req, res) => {
   try {
     const newTour = await Tour.create(req.body);
