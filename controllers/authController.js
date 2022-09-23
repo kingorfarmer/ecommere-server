@@ -18,6 +18,17 @@ const loginToken = (id) => {
   });
 };
 
+const createSendToken = (user, statusCode, res) => {
+  const token = loginToken(user._id);
+  res.status(statusCode).json({
+    status: 'success',
+    token,
+    data: {
+      user
+    }
+  });
+}
+
 exports.signUp = catchAsync(async (req, res) => {
   const newUser = await User.create(req.body);
   const token = signUpToken(newUser._id);
@@ -46,11 +57,7 @@ exports.login = catchAsync(async (req, res, next) => {
     return next(new AppError('Incorrect email or password', 401));
   }
 
-  const token = loginToken(user._id);
-  res.status(200).json({
-    status: 'success',
-    token,
-  });
+  createSendToken(user, 200, res)
 });
 
 exports.protect = catchAsync(async (req, res, next) => {
@@ -157,9 +164,21 @@ exports.resetPassword = catchAsync(async (req, res, next) => {
   user.passwordResetExpires = undefined;
   await user.save();
 
-  const token = loginToken(user._id);
-  res.status(200).json({
-    status: 'success',
-    token,
-  });
+  createSendToken(user, 200, res)
+});
+
+exports.updatePassword = catchAsync(async (req, res, next) => {
+  const user = await User.findById(req.user.id).select('+password');
+  const passwordCorrect = await user.correctPassword(req.body.currentPassword, user.password)
+
+  if(!passwordCorrect) {
+    return next(new AppError('Your current password is wrong', 401))
+  }
+
+  user.password = req.body.password
+  user.passwordConfirm = req.body.passwordConfirm
+  await user.save()
+  //User.findByIdAndUpdate will not work as intended
+
+  createSendToken(user, 200, res)
 });
