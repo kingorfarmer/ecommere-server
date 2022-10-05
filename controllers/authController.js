@@ -27,10 +27,10 @@ const createSendToken = (user, statusCode, res) => {
     httpOnly: true,
   };
 
-  if(process.env.NODE_ENV === 'production') cookieOptions.secure = true
+  if (process.env.NODE_ENV === 'production') cookieOptions.secure = true;
   res.cookie('jwt', token, cookieOptions);
 
-  user.password = undefined
+  user.password = undefined;
 
   res.status(statusCode).json({
     status: 'success',
@@ -79,6 +79,8 @@ exports.protect = catchAsync(async (req, res, next) => {
     req.headers.authorization.startsWith('Bearer')
   ) {
     token = req.headers.authorization.split(' ')[1];
+  } else if (req.cookies.jwt) {
+    token = req.cookies.jwt;
   }
 
   if (!token) {
@@ -105,6 +107,14 @@ exports.protect = catchAsync(async (req, res, next) => {
   req.user = user;
   next();
 });
+
+exports.logout = (req, res) => {
+  res.cookie('jwt', 'loggedout', {
+    expires: new Date(Date.now() + 10 * 1000),
+    httpOnly: true,
+  });
+  res.status(200).json({ status: 'success' });
+};
 
 exports.restrictTo = (...roles) => {
   return (req, res, next) => {

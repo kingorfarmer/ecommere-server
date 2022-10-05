@@ -5,7 +5,8 @@ const helmet = require('helmet');
 const mongoSanitize = require('express-mongo-sanitize');
 const xss = require('xss-clean');
 const hpp = require('hpp');
-const path = require('path')
+const path = require('path');
+const cookieParser = require('cookie-parser');
 
 const tourRouter = require('./routes/tourRoutes');
 const userRouter = require('./routes/userRoutes');
@@ -13,8 +14,10 @@ const globalErrorHandler = require('./controllers/errorController');
 
 const app = express();
 
-const publicPath = path.join(__dirname, './public')
-app.use(express.static(publicPath))
+app.use(express.static(path.join(__dirname, 'public')));
+app.set('view engine', 'pug');
+app.set('views', path.join(__dirname, 'views'));
+
 app.use(helmet());
 
 if (process.env.NODE_ENV === 'development') {
@@ -30,6 +33,8 @@ const limiter = rateLimit({
 app.use('/api', limiter);
 
 app.use(express.json({ limit: '10kb' }));
+app.use(express.urlencoded({ extended: true, limit: '10kb' }));
+app.use(cookieParser());
 
 //NoSQL query injection
 app.use(mongoSanitize());
@@ -44,18 +49,17 @@ app.use(
   })
 );
 
-app.use((req, res, next) => {
-  console.log('Middleware');
-  next();
-});
+// app.use((req, res, next) => {
+//   console.log('Middleware');
+//   next();
+// });
 app.use((req, res, next) => {
   req.requestTime = new Date().toISOString();
   next();
 });
 
 app.get('/', (req, res) => {
-  res.status(200).json({ app: 'demo', message: 'Hello!' });
-  res.sendFile(__dirname + '/index.html');
+  res.status(200).render('base');
 });
 
 app.use('/api/v1/tours', tourRouter);

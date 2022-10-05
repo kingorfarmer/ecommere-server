@@ -24,6 +24,9 @@ exports.getAllUsers = catchAsync(async (req, res) => {
 });
 
 exports.updateInfo = catchAsync(async (req, res, next) => {
+  console.log('file',req.file);
+  console.log('body', req.body);
+
   if (req.body.password || req.body.passwordConfirm) {
     return next(new AppError('Only update personal info', 400));
   }
